@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Scanner - The_GamerZ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0c1222 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #0f1422;
+            border: 1px solid #2a4c7a;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4aff9e;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #4aff9e;
+            color: #0a0f1e;
+        }
+
+        .file-list {
+            background: #0f1422;
+            border: 1px solid #2a4c7a;
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .file-list h3 {
+            color: #4aff9e;
+            margin-bottom: 15px;
+        }
+
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+
+        .file-item {
+            background: #0a0f1e;
+            border: 1px solid #2a4c7a;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.1s;
+        }
+
+        .file-item:hover {
+            border-color: #4aff9e;
+            background: #12172a;
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-name {
+            font-size: 0.8rem;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .file-size {
+            font-size: 0.65rem;
+            color: #8899bb;
+        }
+
+        .open-btn {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: bold;
+            transition: 0.1s;
+        }
+
+        .open-btn:hover {
+            background: #4aff9e;
+            color: #0a0f1e;
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            background: #0f1422;
+            border: 1px solid #2a4c7a;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 0.75rem;
+            color: #88aacc;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #556688;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>
+            <span>📁</span>
+            The_GamerZ File Scanner
+        </h1>
+        <div class="controls">
+            <button id="refreshBtn">🔄 Refresh</button>
+            <button id="clearBtn">🗑️ Clear</button>
+        </div>
+    </div>
+
+    <div class="file-list">
+        <h3>📄 Files in this folder:</h3>
+        <div id="fileList" class="file-grid">
+            <div class="empty-state">Loading files from current folder...</div>
+        </div>
+    </div>
+
+    <div class="status-bar" id="statusMsg">
+        Scanning for files in the current folder...
+    </div>
+</div>
+
+<script>
+    const fileListDiv = document.getElementById('fileList');
+    const statusSpan = document.getElementById('statusMsg');
+
+    function updateStatus(msg, isError = false) {
+        statusSpan.innerHTML = msg;
+        statusSpan.style.color = isError ? '#ff8888' : '#88aacc';
+    }
+
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function getFileIcon(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'html': '🌐', 'htm': '🌐',
+            'css': '🎨', 'js': '⚙️', 'json': '📋',
+            'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️',
+            'mp3': '🎵', 'wav': '🎵', 'ogg': '🎵',
+            'mp4': '🎬', 'webm': '🎬',
+            'pdf': '📕', 'txt': '📄', 'md': '📄',
+            'zip': '📦', 'rar': '📦', '7z': '📦',
+            'exe': '⚡', 'jar': '☕', 'bat': '⚙️', 'sh': '⚙️',
+            'json': '📋', 'xml': '📋', 'yml': '📋', 'yaml': '📋'
+        };
+        return icons[ext] || '📄';
+    }
+
+    function openFile(file) {
+        // Create a temporary URL for the file and open it
+        const url = URL.createObjectURL(file);
+        window.open(url, '_blank');
+        // Revoke the URL after a short delay to free memory
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        updateStatus(`Opening: ${file.name}`);
+    }
+
+    // This function tries to get files from the current directory
+    // Since browsers can't directly read local folders without user permission,
+    // we use a hidden file input to let the user select the folder once,
+    // then remember it for the session.
+    
+    let currentFiles = [];
+    let currentDirectoryHandle = null;
+
+    async function selectDirectory() {
+        try {
+            if ('showDirectoryPicker' in window) {
+                const dirHandle = await window.showDirectoryPicker();
+                currentDirectoryHandle = dirHandle;
+                await loadDirectory(dirHandle);
+                updateStatus(`Loaded ${currentFiles.length} files from "${dirHandle.name}"`);
+            } else {
+                // Fallback for browsers that don't support the API
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.webkitdirectory = true;
+                input.directory = true;
+                input.multiple = true;
+                
+                input.onchange = async (e) => {
+                    const files = Array.from(e.target.files);
+                    // Group by filename to avoid duplicates from subfolders
+                    const uniqueFiles = [];
+                    const fileNames = new Set();
+                    for (const file of files) {
+                        if (!fileNames.has(file.name)) {
+                            fileNames.add(file.name);
+                            uniqueFiles.push(file);
+                        }
+                    }
+                    currentFiles = uniqueFiles;
+                    displayFiles(currentFiles);
+                    updateStatus(`Loaded ${currentFiles.length} files from selected folder`);
+                };
+                input.click();
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                updateStatus('Error selecting folder: ' + err.message, true);
+            }
+        }
+    }
+
+    async function loadDirectory(dirHandle) {
+        const files = [];
+        try {
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'file') {
+                    const file = await entry.getFile();
+                    files.push(file);
+                }
+            }
+            currentFiles = files.sort((a, b) => a.name.localeCompare(b.name));
+            displayFiles(currentFiles);
+        } catch (err) {
+            updateStatus('Error reading directory: ' + err.message, true);
+        }
+    }
+
+    function displayFiles(files) {
+        if (!files || files.length === 0) {
+            fileListDiv.innerHTML = '<div class="empty-state">No files found in this folder.<br><button onclick="selectDirectory()" style="margin-top:15px;">📂 Select a Folder</button></div>';
+            return;
+        }
+
+        fileListDiv.innerHTML = '';
+        files.forEach(file => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'file-item';
+            
+            const fileInfo = document.createElement('div');
+            fileInfo.style.display = 'flex';
+            fileInfo.style.alignItems = 'center';
+            fileInfo.style.gap = '10px';
+            fileInfo.style.flex = '1';
+            
+            fileInfo.innerHTML = `
+                <div class="file-icon">${getFileIcon(file.name)}</div>
+                <div class="file-name" title="${file.name}">${file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name}</div>
+                <div class="file-size">${file.size ? formatSize(file.size) : 'Unknown'}</div>
+            `;
+            
+            const openButton = document.createElement('button');
+            openButton.className = 'open-btn';
+            openButton.textContent = 'Open';
+            openButton.onclick = (e) => {
+                e.stopPropagation();
+                openFile(file);
+            };
+            
+            fileDiv.appendChild(fileInfo);
+            fileDiv.appendChild(openButton);
+            fileListDiv.appendChild(fileDiv);
+        });
+    }
+
+    function refresh() {
+        if (currentDirectoryHandle) {
+            loadDirectory(currentDirectoryHandle);
+        } else {
+            selectDirectory();
+        }
+    }
+
+    function clearFiles() {
+        currentFiles = [];
+        currentDirectoryHandle = null;
+        fileListDiv.innerHTML = '<div class="empty-state">Click "Refresh" to select a folder and view files</div>';
+        updateStatus('Cleared — click Refresh to select a folder');
+    }
+
+    // Event listeners
+    document.getElementById('refreshBtn').addEventListener('click', refresh);
+    document.getElementById('clearBtn').addEventListener('click', clearFiles);
+
+    // Auto-prompt on load
+    setTimeout(() => {
+        selectDirectory();
+    }, 500);
+</script>
+</body>
+</html>
